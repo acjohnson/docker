@@ -1,0 +1,34 @@
+# /etc/default/spamassassin
+# Duncan Findlay
+
+# WARNING: please read README.spamd before using.
+# There may be security risks.
+
+# Prior to version 3.4.2-1, spamd could be enabled by setting
+# ENABLED=1 in this file. This is no longer supported. Instead, please
+# use the update-rc.d command, invoked for example as "update-rc.d
+# spamassassin enable", to enable the spamd service.
+
+# Options
+# See man spamd for possible options. The -d option is automatically added.
+
+# SpamAssassin uses a preforking model, so be careful! You need to
+# make sure --max-children is not set to anything higher than 5,
+# unless you know what you're doing.
+
+OPTIONS="-D --create-prefs --max-children 5 --helper-home-dir --listen-ip=0.0.0.0"
+
+# Pid file
+# Where should spamd write its PID to file? If you use the -u or
+# --username option above, this needs to be writable by that user.
+# Otherwise, the init script will not be able to shut spamd down.
+PIDFILE="/var/run/spamd.pid"
+
+# Set nice level of spamd
+#NICE="--nicelevel 15"
+
+# To enable the daily maintenance task via cron, set CRON to 1 below.
+# If you're using a systemd-based installation (this is the default),
+# then you should instead invoke:
+# systemctl enable spamassassin-daily-maintenance.timer
+CRON=0
