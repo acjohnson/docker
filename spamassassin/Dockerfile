@@ -14,7 +14,7 @@ RUN apt update && \
       --no-install-recommends \
       -o Dpkg::Options::="--force-confdef" \
       -o Dpkg::Options::="--force-confold" \
-      sa-compile spamassassin spamc
+      sa-compile spamassassin spamc spamd
 
 EXPOSE 783
 
