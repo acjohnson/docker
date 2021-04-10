@@ -69,14 +69,15 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
   : "${ROUNDCUBEMAIL_SMTP_PORT:=587}"
   : "${ROUNDCUBEMAIL_PLUGINS:=archive,zipdownload,password}"
   : "${ROUNDCUBEMAIL_SKIN:=elastic}"
-  : "${ROUNDCUBEMAIL_SUPPORT_URL:=''}"
-  : "${ROUNDCUBEMAIL_PRODUCT_NAME:='Roundcube Webmail'}"
+  : "${ROUNDCUBEMAIL_SUPPORT_URL:=}"
+  : "${ROUNDCUBEMAIL_PRODUCT_NAME:=Roundcube Webmail}"
   : "${ROUNDCUBEMAIL_ENABLE_INSTALLER:=false}"
   : "${ROUNDCUBEMAIL_ENABLE_SPELLCHECK:=true}"
   : "${ROUNDCUBEMAIL_SPELLCHECK_DICTIONARY:=false}"
-  : "${ROUNDCUBEMAIL_SPELLCHECK_ENGINE:='googie'}"
-  : "${ROUNDCUBEMAIL_SPELLCHECK_URI:=''}"
-  : "${ROUNDCUBEMAIL_LOG_DRIVER:='stdout'}"
+  : "${ROUNDCUBEMAIL_SPELLCHECK_ENGINE:=googie}"
+  : "${ROUNDCUBEMAIL_SPELLCHECK_URI:=}"
+  : "${ROUNDCUBEMAIL_LOG_DRIVER:=stdout}"
+  : "${ROUNDCUBEMAIL_FORCE_HTTPS:=false}"
   : "${ROUNDCUBEMAIL_TEMP_DIR:=/tmp/roundcube-temp}"
 
   if [ ! -e config/config.inc.php ]; then
@@ -86,7 +87,6 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
     echo "Write root config to $PWD/config/config.inc.php"
     echo "<?php
     \$config['plugins'] = [];
-    \$config['log_driver'] = 'stdout';
     \$config['zipdownload_selection'] = true;
     \$config['des_key'] = '${GENERATED_DES_KEY}';
     include(__DIR__ . '/config.docker.inc.php');
@@ -115,6 +115,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
   \$config['spellcheck_engine'] = '${ROUNDCUBEMAIL_SPELLCHECK_ENGINE}';
   \$config['spellcheck_uri'] = '${ROUNDCUBEMAIL_SPELLCHECK_URI};
   \$config['log_driver'] = '${ROUNDCUBEMAIL_LOG_DRIVER}';
+  \$config['force_https'] = '${ROUNDCUBEMAIL_FORCE_HTTPS}';
   \$config['plugins'] = array_filter(array_unique(array_merge(\$config['plugins'], ['${ROUNDCUBEMAIL_PLUGINS_PHP}'])));
   " > config/config.docker.inc.php
 

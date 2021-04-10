@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:latest
+FROM roundcube/roundcubemail:latest-fpm
 
 RUN set -ex; \
     apt-get update; apt-get dist-upgrade -y; \
