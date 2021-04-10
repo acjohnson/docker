@@ -39,3 +39,5 @@ RUN set -ex; \
         --no-interaction \
         --optimize-autoloader --apcu-autoloader \
         update;
+
+COPY docker-entrypoint.sh /
