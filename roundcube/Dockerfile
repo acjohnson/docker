@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:latest-fpm
+FROM roundcube/roundcubemail:latest
 
 RUN set -ex; \
     apt-get update; apt-get dist-upgrade -y; \
@@ -40,4 +40,5 @@ RUN set -ex; \
         --optimize-autoloader --apcu-autoloader \
         update;
 
+RUN rm -f /usr/src/roundcubemail/plugins/twofactor_gauthenticator/config.inc.php
 COPY docker-entrypoint.sh /

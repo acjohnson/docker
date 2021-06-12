@@ -77,7 +77,8 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
   : "${ROUNDCUBEMAIL_SPELLCHECK_ENGINE:=googie}"
   : "${ROUNDCUBEMAIL_SPELLCHECK_URI:=}"
   : "${ROUNDCUBEMAIL_LOG_DRIVER:=stdout}"
-  : "${ROUNDCUBEMAIL_FORCE_HTTPS:=false}"
+  : "${ROUNDCUBEMAIL_USE_HTTPS:=false}"
+  : "${ROUNDCUBEMAIL_FORCE_HTTPS:=}"
   : "${ROUNDCUBEMAIL_TEMP_DIR:=/tmp/roundcube-temp}"
 
   if [ ! -e config/config.inc.php ]; then
@@ -107,14 +108,15 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
   \$config['smtp_port'] = '${ROUNDCUBEMAIL_SMTP_PORT}';
   \$config['temp_dir'] = '${ROUNDCUBEMAIL_TEMP_DIR}';
   \$config['skin'] = '${ROUNDCUBEMAIL_SKIN}';
-  \$config['support_url'] = '${ROUNDCUBEMAIL_SUPPORT_URL}'];
+  \$config['support_url'] = '${ROUNDCUBEMAIL_SUPPORT_URL}';
   \$config['product_name'] = '${ROUNDCUBEMAIL_PRODUCT_NAME}';
   \$config['enable_installer'] = '${ROUNDCUBEMAIL_ENABLE_INSTALLER}';
   \$config['enable_spellcheck'] = '${ROUNDCUBEMAIL_ENABLE_SPELLCHECK}';
-  \$config['spellcheck_dictionary'] = ${ROUNDCUBEMAIL_SPELLCHECK_DICTIONARY}';
+  \$config['spellcheck_dictionary'] = '${ROUNDCUBEMAIL_SPELLCHECK_DICTIONARY}';
   \$config['spellcheck_engine'] = '${ROUNDCUBEMAIL_SPELLCHECK_ENGINE}';
-  \$config['spellcheck_uri'] = '${ROUNDCUBEMAIL_SPELLCHECK_URI};
+  \$config['spellcheck_uri'] = '${ROUNDCUBEMAIL_SPELLCHECK_URI}';
   \$config['log_driver'] = '${ROUNDCUBEMAIL_LOG_DRIVER}';
+  \$config['use_https'] = '${ROUNDCUBEMAIL_USE_HTTPS}';
   \$config['force_https'] = '${ROUNDCUBEMAIL_FORCE_HTTPS}';
   \$config['plugins'] = array_filter(array_unique(array_merge(\$config['plugins'], ['${ROUNDCUBEMAIL_PLUGINS_PHP}'])));
   " > config/config.docker.inc.php
