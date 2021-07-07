@@ -1,38 +1,13 @@
-FROM roundcube/roundcubemail:latest
+FROM roundcube/roundcubemail:1.5-rc-apache
 
 RUN set -ex; \
     apt-get update; apt-get dist-upgrade -y; \
-    apt-get install -y --no-install-recommends \
-        git \
-    ; \
-    \
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer; \
-    mv /usr/src/roundcubemail/composer.json-dist /usr/src/roundcubemail/composer.json; \
-    \
-    composer \
-        --working-dir=/usr/src/roundcubemail/ \
-        --prefer-dist --prefer-stable \
-        --no-update --no-interaction \
-        --optimize-autoloader --apcu-autoloader \
-        require \
-            johndoh/contextmenu \
-    ; \
-    composer \
-        --working-dir=/usr/src/roundcubemail/ \
-        --prefer-dist --prefer-stable \
-        --no-update --no-interaction \
-        --optimize-autoloader --apcu-autoloader \
-        require \
-            roundcube/filters=dev-master \
-    ; \
-    composer \
-        --working-dir=/usr/src/roundcubemail/ \
-        --prefer-dist --prefer-stable \
-        --no-update --no-interaction \
-        --optimize-autoloader --apcu-autoloader \
-        require \
-            alexandregz/twofactor_gauthenticator=dev-master \
-    ; \
+    apt-get install -y --no-install-recommends git; \
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+
+COPY composer.json /usr/src/roundcubemail/composer.json
+
+RUN set -ex; \
     composer \
         --working-dir=/usr/src/roundcubemail/ \
         --prefer-dist --no-dev \
@@ -41,4 +16,5 @@ RUN set -ex; \
         update;
 
 RUN rm -f /usr/src/roundcubemail/plugins/twofactor_gauthenticator/config.inc.php
+
 COPY docker-entrypoint.sh /
