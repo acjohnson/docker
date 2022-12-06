@@ -1,6 +1,6 @@
-# Spamassassin 4.0.0 docker image based on debian-experimental
+# Spamassassin 4.0.0 docker image based on debian-sid
 
-FROM debian:experimental
+FROM debian:sid
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -9,7 +9,7 @@ ADD ./etc /etc
 RUN apt update && \
     apt dist-upgrade -y && \
     apt install --no-install-recommends -y ca-certificates bash apt-utils sudo procps pyzor razor gpg gpg-agent && \
-    apt -t experimental install \
+    apt install \
       -y \
       --no-install-recommends \
       -o Dpkg::Options::="--force-confdef" \
