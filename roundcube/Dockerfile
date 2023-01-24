@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:1.6.0-apache
+FROM registry.thejohnsons.site/roundcube/roundcubemail:1.6.1-apache-custom
 
 RUN set -ex; \
     apt-get update; apt-get dist-upgrade -y; \
