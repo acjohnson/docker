@@ -2,7 +2,7 @@ FROM registry.thejohnsons.site/roundcube/roundcubemail:1.6.1-apache-custom
 
 RUN set -ex; \
     apt-get update; apt-get dist-upgrade -y; \
-    apt-get install -y --no-install-recommends git; \
+    apt-get install -y --no-install-recommends git unzip; \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
 COPY composer.json /usr/src/roundcubemail/composer.json
