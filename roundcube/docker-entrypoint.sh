@@ -18,7 +18,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
     INSTALLDIR=`pwd`
     echo >&2 "roundcubemail found in $INSTALLDIR - installing update..."
     (cd /usr/src/roundcubemail && bin/installto.sh -y $INSTALLDIR)
-    composer.phar update --no-dev
+    composer update --no-dev
   fi
 
   if [ -f /run/secrets/roundcube_db_user ]; then
@@ -133,7 +133,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
   done
 
   # initialize or update DB
-  bin/initdb.sh --dir=$PWD/SQL --create || bin/updatedb.sh --dir=$PWD/SQL --package=roundcube || echo "Failed to initialize database. Please run $PWD/bin/initdb.sh and $PWD/bin/updatedb.sh manually."
+  bin/initdb.sh --dir=$PWD/SQL --update || echo "Failed to initialize/update the database. Please start with an empty database and restart the container."
 
   if [ ! -z "${ROUNDCUBEMAIL_TEMP_DIR}" ]; then
     mkdir -p ${ROUNDCUBEMAIL_TEMP_DIR} && chown www-data ${ROUNDCUBEMAIL_TEMP_DIR}
@@ -150,6 +150,13 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
     echo "${ROUNDCUBEMAIL_LOCALE}" > /etc/locale.gen
     /usr/sbin/locale-gen
   fi
+
+  if [ ! -z "${ROUNDCUBEMAIL_ASPELL_DICTS}" ]; then
+    ASPELL_PACKAGES=`echo -n "aspell-${ROUNDCUBEMAIL_ASPELL_DICTS}" | sed -E "s/[, ]+/ aspell-/g"`
+    which apt-get && apt-get install -y $ASPELL_PACKAGES
+    which apk && apk add --no-cache $ASPELL_PACKAGES
+  fi
+
 fi
 
 exec "$@"
