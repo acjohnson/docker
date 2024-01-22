@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:1.6.5-apache
+FROM roundcube/roundcubemail:1.6.6-apache
 
 RUN set -ex; \
     apt-get update; apt-get dist-upgrade -y; \
