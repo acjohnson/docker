@@ -1,4 +1,4 @@
-# Spamassassin 4.0.0 docker image based on debian-sid
+# Spamassassin 4.0.1 docker image based on debian-sid
 
 FROM debian:sid
 
