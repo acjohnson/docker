@@ -1,4 +1,4 @@
-FULLTAG=registry.thejohnsons.site/debianbased:spamassassin
+FULLTAG=registry.thejohnsons.site/debianbased:spamassassin-4.0.2
 DOCKERFILE=Dockerfile
 all: build
 

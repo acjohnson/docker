@@ -1,6 +1,6 @@
-# Spamassassin 4.0.1 docker image based on debian-sid
+# Spamassassin 4.0.2 docker image based on debian-forky
 
-FROM debian:sid
+FROM debian:forky
 
 ENV DEBIAN_FRONTEND=noninteractive
 
