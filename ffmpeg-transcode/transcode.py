@@ -97,7 +97,7 @@ def encode_file(source_file: str, audio_track: int) -> bool:
     ffmpeg_cmd = [
         'ffmpeg', '-y',
         '-i', source_file,
-        '-threads', '2',
+        '-threads', '4',
         '-vcodec', 'libx264',
         '-b:v', '1200k',
         '-filter:v', 'yadif',
@@ -144,6 +144,23 @@ def process_directory(base_path: str, min_size_mb: int) -> Tuple[int, int]:
     processed_count = 0
     error_count = 0
 
+    # Build a list of files that need processing
+    files_to_process = []
+    extensions = ['mp4', 'mpeg4', 'mkv', 'avi']
+    for ext in extensions:
+        pattern = f"{base_path}/**/*.{ext}"
+        try:
+            for file_path in glob.glob(pattern, recursive=True):
+                if '_RECODE' in file_path or '_SKIP' in file_path:
+                    continue
+                if os.path.getsize(file_path) >= min_size:
+                    files_to_process.append(file_path)
+        except Exception as e:
+            logging.error(f"Error scanning for {ext} files: {str(e)}")
+
+    logging.info(
+        f"Found {len(files_to_process)} files to process in {base_path}")
+
     # Remove broken RECODE files
     try:
         for broken_file in glob.glob(f"{base_path}/**/*RECODE*", recursive=True):
@@ -154,7 +171,6 @@ def process_directory(base_path: str, min_size_mb: int) -> Tuple[int, int]:
         logging.error(f"Error cleaning broken RECODE files: {str(e)}")
 
     # Find media files
-    extensions = ['mp4', 'mpeg4', 'mkv', 'avi']
     for ext in extensions:
         pattern = f"{base_path}/**/*.{ext}"
         try:
@@ -171,11 +187,11 @@ def process_directory(base_path: str, min_size_mb: int) -> Tuple[int, int]:
                         else:
                             error_count += 1
                     except Exception as e:
-                        logging.error(f"Error processing {
-                                      file_path}: {str(e)}")
+                        logging.error(
+                            f"Error processing {file_path}: {str(e)}")
                         error_count += 1
                 else:
-                    logging.info(f"Skipping file (too small): {file_path}")
+                    logging.debug(f"Skipping file (too small): {file_path}")
 
         except Exception as e:
             logging.error(f"Error processing extension {ext}: {str(e)}")
