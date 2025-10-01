@@ -112,10 +112,7 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         logging.info(f"Starting encoding: {source_file}")
         logging.info(f"FFmpeg command: {' '.join(ffmpeg_cmd)}")
 
-        process = subprocess.run(ffmpeg_cmd,
-                                 check=True,
-                                 capture_output=True,
-                                 text=True)
+        subprocess.run(ffmpeg_cmd, check=True)
 
         # Verify the output file exists and has content
         if not os.path.exists(output_file) or os.path.getsize(output_file) < 1024:
@@ -130,7 +127,7 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         return True
 
     except subprocess.CalledProcessError as e:
-        logging.error(f"FFmpeg error: {e.stderr}")
+        logging.error(f"FFmpeg encoding failed")
         return False
     except Exception as e:
         logging.error(f"Encoding error: {str(e)}")
