@@ -10,6 +10,9 @@ CLAUDE_CODE_CONFIG_FILE="$HOME/tmp/claude-code-config"
 HOST_UID=$(id -u)
 HOST_GID=$(id -g)
 
+# Get the docker group GID from the host
+DOCKER_GID=$(getent group docker | cut -d: -f3)
+
 # Default project dir = current working directory
 DEFAULT_PROJECT_DIR="$(pwd)"
 
@@ -34,6 +37,7 @@ docker run --rm -it \
   --name claude-code \
   --network host \
   --user "${HOST_UID}:${HOST_GID}" \
+  --group-add "${DOCKER_GID}" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$CLAUDE_CODE_CONFIG_FILE:/tmp/claude-code-config" \
   -v "$PROJECT_DIR:/$PROJECT_NAME" \
