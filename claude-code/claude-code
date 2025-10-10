@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Configuration
+IMAGE_NAME="claude-code-node-22-trixie"
+IMAGE_TAG="latest"
+CLAUDE_CODE_CONFIG_FILE="$HOME/tmp/claude-code-config"
+
+# Get host user's UID and GID
+HOST_UID=$(id -u)
+HOST_GID=$(id -g)
+
+# Default project dir = current working directory
+DEFAULT_PROJECT_DIR="$(pwd)"
+
+# Get project dir from arg or prompt
+if [[ $# -gt 0 ]]; then
+  PROJECT_DIR="$(realpath "$1")"
+else
+  read -rp "Enter project directory (${DEFAULT_PROJECT_DIR}): " PROJECT_DIR
+  PROJECT_DIR="${PROJECT_DIR:-$DEFAULT_PROJECT_DIR}"
+  PROJECT_DIR="$(realpath "$PROJECT_DIR")"
+fi
+
+if [[ ! -d "$PROJECT_DIR" ]]; then
+  echo "Error: $PROJECT_DIR does not exist"
+  exit 1
+fi
+
+# Figure out the base name of the project dir (mount point inside container)
+PROJECT_NAME="$(basename "$PROJECT_DIR")"
+
+docker run --rm -it \
+  --name claude-code \
+  --network host \
+  --user "${HOST_UID}:${HOST_GID}" \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$CLAUDE_CODE_CONFIG_FILE:/tmp/claude-code-config" \
+  -v "$PROJECT_DIR:/$PROJECT_NAME" \
+  "${IMAGE_NAME}:${IMAGE_TAG}" bash -c "
+    set -e
+    source /tmp/claude-code-config
+    cd /$PROJECT_NAME
+    exec claude
+  "
