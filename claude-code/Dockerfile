@@ -35,6 +35,7 @@ RUN apt-get update && \
         git \
         tig \
         vim \
+        jq \
         iproute2 \
         netcat-openbsd \
         python3-pip \
