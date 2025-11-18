@@ -99,6 +99,7 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         '-i', source_file,
         '-threads', '4',
         '-vcodec', 'libx264',
+        '-pix_fmt', 'yuv420p',
         '-b:v', '1200k',
         '-filter:v', 'yadif',
         '-acodec', 'aac',
