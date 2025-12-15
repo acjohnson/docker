@@ -1,6 +1,6 @@
 {
   "name": "roundcube/roundcubemail",
-  "version": "1.6.11",
+  "version": "1.6.12",
   "description": "The Roundcube Webmail suite",
   "license": "GPL-3.0-or-later",
   "repositories": [
