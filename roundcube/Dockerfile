@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:1.6.14-apache
+FROM roundcube/roundcubemail:1.6.14-apache AS builder
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -7,20 +7,22 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends git unzip; \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
-COPY composer.json /usr/src/roundcubemail/
+WORKDIR /usr/src/roundcubemail
 
-RUN rm -f /usr/src/roundcubemail/composer.lock; \
-    rm -f /usr/src/roundcubemail/composer.json-dist
+# Merge plugin deps into existing composer.json
+RUN composer config repositories.acjohnson-filters vcs https://gitlab.thejohnsons.site/acjohnson/roundcube-plugin-filters.git \
+ && composer config repositories.acjohnson-advanced_search vcs https://gitlab.thejohnsons.site/acjohnson/roundcube-plugin-advanced_search.git \
+ && composer require --update-no-dev --optimize-autoloader \
+      acjohnson/filters:dev-master \
+      acjohnson/advanced_search:dev-master \
+      alexandregz/twofactor_gauthenticator:dev-master
 
-RUN set -ex; \
-    composer \
-        --working-dir=/usr/src/roundcubemail/ \
-        --prefer-dist \
-        --prefer-stable \
-        --no-interaction \
-        --optimize-autoloader \
-        --apcu-autoloader \
-        update;
+FROM roundcube/roundcubemail:1.6.14-apache
+
+# Copy the fully-built plugins
+COPY --from=builder /usr/src/roundcubemail/plugins/filters /usr/src/roundcubemail/plugins/filters
+COPY --from=builder /usr/src/roundcubemail/plugins/advanced_search /usr/src/roundcubemail/plugins/advanced_search
+COPY --from=builder /usr/src/roundcubemail/plugins/twofactor_gauthenticator /usr/src/roundcubemail/plugins/twofactor_gauthenticator
 
 RUN rm -f /usr/src/roundcubemail/plugins/twofactor_gauthenticator/config.inc.php
 
