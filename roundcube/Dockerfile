@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:1.6.13-apache
+FROM roundcube/roundcubemail:1.6.14-apache
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
