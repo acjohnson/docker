@@ -16,6 +16,7 @@ RUN npm install -g @anthropic-ai/claude-code
 RUN apt-get update && \
     apt-get install -y \
         ca-certificates \
+        python3-requests \
         curl \
         gnupg \
         lsb-release && \
@@ -38,6 +39,7 @@ RUN apt-get update && \
         jq \
         iproute2 \
         netcat-openbsd \
+        tree \
         python3-pip \
         python3-venv \
         python3-virtualenv \
