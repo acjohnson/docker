@@ -153,7 +153,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 
   if [ ! -z "${ROUNDCUBEMAIL_ASPELL_DICTS}" ]; then
     ASPELL_PACKAGES=`echo -n "aspell-${ROUNDCUBEMAIL_ASPELL_DICTS}" | sed -E "s/[, ]+/ aspell-/g"`
-    which apt-get && apt-get install -y $ASPELL_PACKAGES
+    which apt-get && apt-get update && apt-get install -y $ASPELL_PACKAGES
     which apk && apk add --no-cache $ASPELL_PACKAGES
   fi
 
