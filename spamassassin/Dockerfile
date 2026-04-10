@@ -14,7 +14,10 @@ RUN apt update && \
       --no-install-recommends \
       -o Dpkg::Options::="--force-confdef" \
       -o Dpkg::Options::="--force-confold" \
-      sa-compile spamassassin spamc spamd
+      sa-compile spamassassin spamc spamd && \
+    mkdir -p /var/lib/spamassassin/.spamassassin && \
+    chown -R debian-spamd:debian-spamd /var/lib/spamassassin && \
+    rm -f /etc/default/spamd
 
 EXPOSE 783
 

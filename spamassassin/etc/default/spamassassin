@@ -15,8 +15,7 @@
 # SpamAssassin uses a preforking model, so be careful! You need to
 # make sure --max-children is not set to anything higher than 5,
 # unless you know what you're doing.
-
-OPTIONS="-D --create-prefs --max-children 5 --helper-home-dir --listen-ip=0.0.0.0 -A 0.0.0.0/0"
+OPTIONS="-D --create-prefs --max-children 5 --helper-home-dir=/var/lib/spamassassin --listen-ip=0.0.0.0 -A 0.0.0.0/0 -u debian-spamd -g debian-spamd"
 
 # Pid file
 # Where should spamd write its PID to file? If you use the -u or
