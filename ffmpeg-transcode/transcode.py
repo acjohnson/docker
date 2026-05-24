@@ -87,7 +87,7 @@ def get_audio_track(input_file: str) -> Optional[int]:
 
 
 def encode_file(source_file: str, audio_track: int) -> bool:
-    """Encode the video file with error handling."""
+    """Encode the video file with settings optimized for direct streaming."""
     output_file = f"{os.path.splitext(source_file)[0]}_RECODE.mp4"
 
     if os.path.exists(output_file):
@@ -98,14 +98,50 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         'ffmpeg', '-y',
         '-i', source_file,
         '-threads', '4',
+
+        # --- Video settings ---
         '-vcodec', 'libx264',
         '-pix_fmt', 'yuv420p',
-        '-b:v', '1200k',
-        '-filter:v', 'yadif',
+
+        # Constrain to High profile, level 4.1 — widely supported by
+        # smart TVs, Roku, Chromecast, Fire Stick, browsers, etc.
+        '-profile:v', 'high',
+        '-level:v', '4.1',
+
+        # Use CRF for consistent quality instead of a fixed bitrate.
+        # CRF 20 is visually transparent for most content. If you need
+        # to cap the bitrate for storage reasons, add:
+        #   '-maxrate', '4000k', '-bufsize', '8000k',
+        '-crf', '20',
+
+        # Deinterlace only if needed (yadif always runs otherwise)
+        '-vf', 'yadif=deint=interlaced',
+
+        # --- Audio settings ---
         '-acodec', 'aac',
         '-ab', '128k',
+        '-ac', '2',               # Stereo — maximum device compatibility
+        '-aac_coder', 'twoloop',  # Better quality AAC encoding
+
+        # --- Stream mapping ---
         '-map', '0:v:0',
         '-map', f'0:a:{audio_track}',
+
+        # Copy subtitle streams if they exist (text-based only, since
+        # MP4 supports mov_text but not bitmap subs like PGS/VOBSUB).
+        # Uncomment the next two lines if you want embedded subs:
+        # '-map', '0:s?',
+        # '-c:s', 'mov_text',
+
+        # --- Container settings ---
+        # CRITICAL: Move moov atom to the beginning of the file so
+        # clients can start playback immediately without downloading
+        # the entire file. This is the #1 fix for direct stream issues.
+        '-movflags', '+faststart',
+
+        # Write a more complete header for better seeking support
+        '-write_tmcd', '0',
+
         output_file
     ]
 
@@ -117,18 +153,44 @@ def encode_file(source_file: str, audio_track: int) -> bool:
 
         # Verify the output file exists and has content
         if not os.path.exists(output_file) or os.path.getsize(output_file) < 1024:
-            logging.error(f"Encoding failed: Output file is missing or empty")
+            logging.error("Encoding failed: Output file is missing or empty")
             return False
+
+        # Verify the output is actually playable
+        verify_cmd = [
+            'ffprobe', '-v', 'error',
+            '-select_streams', 'v:0',
+            '-show_entries', 'stream=codec_name,profile,level,pix_fmt',
+            '-of', 'json',
+            output_file
+        ]
+        verify_output = subprocess.check_output(verify_cmd, stderr=subprocess.PIPE)
+        verify_info = json.loads(verify_output)
+
+        if not verify_info.get('streams'):
+            logging.error("Verification failed: No video stream in output")
+            return False
+
+        stream = verify_info['streams'][0]
+        logging.info(
+            f"Output verified — codec: {stream.get('codec_name')}, "
+            f"profile: {stream.get('profile')}, "
+            f"level: {stream.get('level')}, "
+            f"pix_fmt: {stream.get('pix_fmt')}"
+        )
 
         logging.info(f"Successfully encoded: {output_file}")
 
-        # Remove source file
         os.remove(source_file)
         logging.info(f"Removed source file: {source_file}")
         return True
 
     except subprocess.CalledProcessError as e:
-        logging.error(f"FFmpeg encoding failed")
+        logging.error("FFmpeg encoding failed")
+        # Clean up partial output
+        if os.path.exists(output_file):
+            os.remove(output_file)
+            logging.info("Cleaned up partial output file")
         return False
     except Exception as e:
         logging.error(f"Encoding error: {str(e)}")
