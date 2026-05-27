@@ -15,7 +15,8 @@ RUN composer config repositories.acjohnson-filters vcs https://gitlab.thejohnson
  && composer require --update-no-dev --optimize-autoloader \
       acjohnson/filters:dev-master \
       acjohnson/advanced_search:dev-master \
-      alexandregz/twofactor_gauthenticator:dev-master
+      alexandregz/twofactor_gauthenticator:dev-master \
+      johndoh/contextmenu:dev-master
 
 FROM roundcube/roundcubemail:1.7.1-apache
 
@@ -23,6 +24,7 @@ FROM roundcube/roundcubemail:1.7.1-apache
 COPY --from=builder /usr/src/roundcubemail/plugins/filters /usr/src/roundcubemail/plugins/filters
 COPY --from=builder /usr/src/roundcubemail/plugins/advanced_search /usr/src/roundcubemail/plugins/advanced_search
 COPY --from=builder /usr/src/roundcubemail/plugins/twofactor_gauthenticator /usr/src/roundcubemail/plugins/twofactor_gauthenticator
+COPY --from=builder /usr/src/roundcubemail/plugins/contextmenu /usr/src/roundcubemail/plugins/contextmenu
 
 RUN rm -f /usr/src/roundcubemail/plugins/twofactor_gauthenticator/config.inc.php
 
