@@ -27,5 +27,6 @@ COPY --from=builder /usr/src/roundcubemail/plugins/twofactor_gauthenticator /usr
 COPY --from=builder /usr/src/roundcubemail/plugins/contextmenu /usr/src/roundcubemail/plugins/contextmenu
 
 RUN rm -f /usr/src/roundcubemail/plugins/twofactor_gauthenticator/config.inc.php
+RUN rm -f /usr/src/roundcubemail/public_html/installer.php
 
 COPY docker-entrypoint.sh /
