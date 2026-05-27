@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:1.6.15-apache AS builder
+FROM roundcube/roundcubemail:1.7.1-apache AS builder
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -17,7 +17,7 @@ RUN composer config repositories.acjohnson-filters vcs https://gitlab.thejohnson
       acjohnson/advanced_search:dev-master \
       alexandregz/twofactor_gauthenticator:dev-master
 
-FROM roundcube/roundcubemail:1.6.15-apache
+FROM roundcube/roundcubemail:1.7.1-apache
 
 # Copy the fully-built plugins
 COPY --from=builder /usr/src/roundcubemail/plugins/filters /usr/src/roundcubemail/plugins/filters
