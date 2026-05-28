@@ -5,6 +5,10 @@ set -euo pipefail
 IMAGE_NAME="claude-code-node-22-trixie"
 IMAGE_TAG="latest"
 CLAUDE_CODE_CONFIG_FILE="$HOME/tmp/claude-code-config"
+CLAUDE_HOME_DIR="$HOME/tmp/claude-homedir"
+
+# Ensure the persistent home directory exists
+mkdir -p "$CLAUDE_HOME_DIR"
 
 # Get host user's UID and GID
 HOST_UID=$(id -u)
@@ -16,10 +20,24 @@ DOCKER_GID=$(getent group docker | cut -d: -f3)
 # Default project dir = current working directory
 DEFAULT_PROJECT_DIR="$(pwd)"
 
-# Get project dir from arg or prompt
-if [[ $# -gt 0 ]]; then
+# Get project dir from arg or prompt, and separate claude arguments.
+# If the first arg is a directory, use it as the project dir.
+# Any remaining args are passed through to the claude executable.
+# If no directory arg is given, prompt the user for one.
+CLAUDE_ARGS=()
+if [[ $# -gt 0 && -d "$1" ]]; then
   PROJECT_DIR="$(realpath "$1")"
+  shift
+  CLAUDE_ARGS=("$@")
+elif [[ $# -gt 0 ]]; then
+  # Args were passed but the first one isn't a directory,
+  # so they're all claude flags. Prompt for the directory.
+  CLAUDE_ARGS=("$@")
+  read -rp "Enter project directory (${DEFAULT_PROJECT_DIR}): " PROJECT_DIR
+  PROJECT_DIR="${PROJECT_DIR:-$DEFAULT_PROJECT_DIR}"
+  PROJECT_DIR="$(realpath "$PROJECT_DIR")"
 else
+  # No args at all — prompt for directory
   read -rp "Enter project directory (${DEFAULT_PROJECT_DIR}): " PROJECT_DIR
   PROJECT_DIR="${PROJECT_DIR:-$DEFAULT_PROJECT_DIR}"
   PROJECT_DIR="$(realpath "$PROJECT_DIR")"
@@ -38,12 +56,17 @@ docker run --rm -it \
   --network host \
   --user "${HOST_UID}:${HOST_GID}" \
   --group-add "${DOCKER_GID}" \
+  -e HOME=/home/claude-user \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$CLAUDE_CODE_CONFIG_FILE:/tmp/claude-code-config" \
+  -v "$CLAUDE_CODE_CONFIG_FILE:/tmp/claude-code-config:ro" \
+  -v "$CLAUDE_HOME_DIR:/home/claude-user" \
   -v "$PROJECT_DIR:/$PROJECT_NAME" \
-  "${IMAGE_NAME}:${IMAGE_TAG}" bash -c "
+  "${IMAGE_NAME}:${IMAGE_TAG}" \
+  bash -lc '
     set -e
     source /tmp/claude-code-config
-    cd /$PROJECT_NAME
-    exec claude
-  "
+    cd "/$1"
+    shift
+    mkdir -p "$HOME/.claude" "$HOME/.config" "$HOME/.cache"
+    exec claude "$@"
+  ' bash "$PROJECT_NAME" "${CLAUDE_ARGS[@]}"
