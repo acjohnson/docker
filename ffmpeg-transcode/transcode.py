@@ -91,8 +91,13 @@ def encode_file(source_file: str, audio_track: int) -> bool:
     output_file = f"{os.path.splitext(source_file)[0]}_RECODE.mp4"
 
     if os.path.exists(output_file):
-        logging.warning(f"Output file already exists: {output_file}")
-        return False
+        logging.warning(f"Output file already exists, removing incomplete encode: {output_file}")
+        try:
+            os.remove(output_file)
+            logging.info(f"Removed incomplete output file: {output_file}")
+        except Exception as e:
+            logging.error(f"Failed to remove existing output file {output_file}: {str(e)}")
+            return False
 
     ffmpeg_cmd = [
         'ffmpeg', '-y',
