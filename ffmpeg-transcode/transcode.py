@@ -12,24 +12,25 @@ from typing import Optional, Tuple
 
 def setup_logging() -> None:
     """Configure logging to stdout/stderr for container environment"""
-    # Configure root logger to stderr for errors
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        stream=sys.stderr
-    )
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
 
-    # Create stdout handler for info/debug messages
+    # Remove any existing handlers to avoid duplicates
+    logger.handlers.clear()
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    # Stdout handler for info/debug messages
     stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setLevel(logging.INFO)
+    stdout_handler.setLevel(logging.DEBUG)
     stdout_handler.addFilter(lambda record: record.levelno <= logging.INFO)
+    stdout_handler.setFormatter(formatter)
 
-    # Create stderr handler for warning/error messages
+    # Stderr handler for warning/error messages
     stderr_handler = logging.StreamHandler(sys.stderr)
     stderr_handler.setLevel(logging.WARNING)
+    stderr_handler.setFormatter(formatter)
 
-    # Get root logger and add handlers
-    logger = logging.getLogger()
     logger.addHandler(stdout_handler)
     logger.addHandler(stderr_handler)
 
@@ -40,8 +41,7 @@ def check_dependencies() -> bool:
         try:
             subprocess.run([tool, '-version'], capture_output=True, check=True)
         except (subprocess.SubprocessError, FileNotFoundError):
-            logging.error(f"Required tool '{
-                          tool}' not found. Please install it.")
+            logging.error(f"Required tool '{tool}' not found. Please install it.")
             return False
     return True
 
@@ -72,7 +72,7 @@ def get_audio_track(input_file: str) -> Optional[int]:
                 logging.info(f"Found English audio track at index {i}")
                 return i
 
-        logging.info(f"No English audio track found, defaulting to track 0")
+        logging.info("No English audio track found, defaulting to track 0")
         return 0
 
     except subprocess.CalledProcessError as e:
@@ -190,7 +190,7 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         logging.info(f"Removed source file: {source_file}")
         return True
 
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         logging.error("FFmpeg encoding failed")
         # Clean up partial output
         if os.path.exists(output_file):
@@ -226,8 +226,19 @@ def process_directory(base_path: str, min_size_mb: int) -> Tuple[int, int]:
         except Exception as e:
             logging.error(f"Error scanning for {ext} files: {str(e)}")
 
-    logging.info(
-        f"Found {len(files_to_process)} files to process in {base_path}")
+    # Sort for deterministic ordering in logs
+    files_to_process.sort()
+
+    logging.info(f"Found {len(files_to_process)} files to process in {base_path}")
+
+    if files_to_process:
+        logging.info("Files queued for encoding:")
+        for i, file_path in enumerate(files_to_process, 1):
+            try:
+                size_gb = os.path.getsize(file_path) / (1024 * 1024 * 1024)
+                logging.info(f"  [{i}/{len(files_to_process)}] {file_path} ({size_gb:.2f} GB)")
+            except Exception as e:
+                logging.warning(f"  [{i}/{len(files_to_process)}] {file_path} (size unavailable: {str(e)})")
 
     # Remove broken RECODE files
     try:
@@ -238,31 +249,18 @@ def process_directory(base_path: str, min_size_mb: int) -> Tuple[int, int]:
     except Exception as e:
         logging.error(f"Error cleaning broken RECODE files: {str(e)}")
 
-    # Find media files
-    for ext in extensions:
-        pattern = f"{base_path}/**/*.{ext}"
+    # Process the collected files
+    for file_path in files_to_process:
+        logging.info(f"Processing: {file_path}")
         try:
-            for file_path in glob.glob(pattern, recursive=True):
-                if '_RECODE' in file_path or '_SKIP' in file_path:
-                    continue
-
-                if os.path.getsize(file_path) >= min_size:
-                    logging.info(f"Processing: {file_path}")
-                    try:
-                        audio_track = get_audio_track(file_path)
-                        if audio_track is not None and encode_file(file_path, audio_track):
-                            processed_count += 1
-                        else:
-                            error_count += 1
-                    except Exception as e:
-                        logging.error(
-                            f"Error processing {file_path}: {str(e)}")
-                        error_count += 1
-                else:
-                    logging.debug(f"Skipping file (too small): {file_path}")
-
+            audio_track = get_audio_track(file_path)
+            if audio_track is not None and encode_file(file_path, audio_track):
+                processed_count += 1
+            else:
+                error_count += 1
         except Exception as e:
-            logging.error(f"Error processing extension {ext}: {str(e)}")
+            logging.error(f"Error processing {file_path}: {str(e)}")
+            error_count += 1
 
     return processed_count, error_count
 
@@ -291,8 +289,9 @@ def main():
         total_processed += processed
         total_errors += errors
 
-        logging.info(f"Processing complete. Successfully processed: {
-                     total_processed}, Errors: {total_errors}")
+        logging.info(
+            f"Processing complete. Successfully processed: {total_processed}, Errors: {total_errors}"
+        )
 
         # Exit with error if any files failed
         if total_errors > 0:
