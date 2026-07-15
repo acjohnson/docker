@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:1.7.1-apache AS builder
+FROM roundcube/roundcubemail:1.7.2-apache AS builder
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -38,7 +38,7 @@ RUN cd skins/elastic && \
     lessc --clean-css="--s1 --advanced" styles/styles.less > styles/styles.css && \
     lessc --clean-css="--s1 --advanced" styles/styles.less > styles/styles.min.css
 
-FROM roundcube/roundcubemail:1.7.1-apache
+FROM roundcube/roundcubemail:1.7.2-apache
 
 # Copy the fully-built plugins
 COPY --from=builder /usr/src/roundcubemail/plugins/filters /usr/src/roundcubemail/plugins/filters
