@@ -19,6 +19,10 @@ RUN composer config repositories.acjohnson-filters vcs https://gitlab.thejohnson
       alexandregz/twofactor_gauthenticator:dev-master \
       johndoh/contextmenu:dev-master
 
+# Clone and prepare PrimitiveNotes plugin
+RUN git clone https://gitlab.thejohnsons.site/acjohnson/roundcube_primitivenotes.git plugins/primitivenotes \
+ && cp plugins/primitivenotes/config.inc.php.dist plugins/primitivenotes/config.inc.php
+
 # Create _styles.less
 RUN cat <<EOF > skins/elastic/styles/_styles.less
 /* Change unread message bullet to yellow/gold */
@@ -40,11 +44,18 @@ RUN cd skins/elastic && \
 
 FROM roundcube/roundcubemail:1.7.3-apache
 
+# Install YAML extension in the runtime stage
+RUN apt-get update && apt-get install -y libyaml-dev \
+    && pecl install yaml \
+    && docker-php-ext-enable yaml \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Copy the fully-built plugins
 COPY --from=builder /usr/src/roundcubemail/plugins/filters /usr/src/roundcubemail/plugins/filters
 COPY --from=builder /usr/src/roundcubemail/plugins/advanced_search /usr/src/roundcubemail/plugins/advanced_search
 COPY --from=builder /usr/src/roundcubemail/plugins/twofactor_gauthenticator /usr/src/roundcubemail/plugins/twofactor_gauthenticator
 COPY --from=builder /usr/src/roundcubemail/plugins/contextmenu /usr/src/roundcubemail/plugins/contextmenu
+COPY --from=builder /usr/src/roundcubemail/plugins/primitivenotes /usr/src/roundcubemail/plugins/primitivenotes
 
 # Copy the compiled CSS files
 COPY --from=builder /usr/src/roundcubemail/skins/elastic/styles/styles.css /usr/src/roundcubemail/skins/elastic/styles/styles.css
