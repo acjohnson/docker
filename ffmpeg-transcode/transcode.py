@@ -86,9 +86,45 @@ def get_audio_track(input_file: str) -> Optional[int]:
         raise
 
 
+def get_safe_output_path(source_file: str) -> str:
+    """
+    Generates an output file path, ensuring the filename does not exceed 
+    the OS maximum filename length (usually 255 bytes on Linux).
+    """
+    directory = os.path.dirname(source_file)
+    filename = os.path.basename(source_file)
+    name_without_ext, _ = os.path.splitext(filename)
+    
+    suffix = "_RECODE.mp4"
+    
+    # Linux has a 255-byte limit for single filenames.
+    # We set a safe limit of 240 bytes to avoid hitting edge-case filesystem limits.
+    max_bytes = 240
+    suffix_bytes = suffix.encode('utf-8')
+    max_base_bytes = max_bytes - len(suffix_bytes)
+    
+    base_bytes = name_without_ext.encode('utf-8')
+    
+    if len(base_bytes) > max_base_bytes:
+        # Truncate the byte string to fit within limits
+        truncated_bytes = base_bytes[:max_base_bytes]
+        # Decode back to string, ignoring any partial multi-byte UTF-8 character at the end
+        truncated_name = truncated_bytes.decode('utf-8', errors='ignore')
+        
+        logging.warning(
+            f"Filename '{filename}' is too long ({len(base_bytes)} bytes). "
+            f"Truncating base name to stay within filesystem limits."
+        )
+        filename_to_use = f"{truncated_name}{suffix}"
+    else:
+        filename_to_use = f"{name_without_ext}{suffix}"
+        
+    return os.path.join(directory, filename_to_use)
+
+
 def encode_file(source_file: str, audio_track: int) -> bool:
     """Encode the video file with settings optimized for direct streaming."""
-    output_file = f"{os.path.splitext(source_file)[0]}_RECODE.mp4"
+    output_file = get_safe_output_path(source_file)
 
     if os.path.exists(output_file):
         logging.warning(f"Output file already exists, removing incomplete encode: {output_file}")
@@ -114,9 +150,6 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         '-level:v', '4.1',
 
         # Use CRF for consistent quality instead of a fixed bitrate.
-        # CRF 20 is visually transparent for most content. If you need
-        # to cap the bitrate for storage reasons, add:
-        #   '-maxrate', '4000k', '-bufsize', '8000k',
         '-crf', '20',
 
         # Deinterlace only if needed (yadif always runs otherwise)
@@ -132,19 +165,8 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         '-map', '0:v:0',
         '-map', f'0:a:{audio_track}',
 
-        # Copy subtitle streams if they exist (text-based only, since
-        # MP4 supports mov_text but not bitmap subs like PGS/VOBSUB).
-        # Uncomment the next two lines if you want embedded subs:
-        # '-map', '0:s?',
-        # '-c:s', 'mov_text',
-
         # --- Container settings ---
-        # CRITICAL: Move moov atom to the beginning of the file so
-        # clients can start playback immediately without downloading
-        # the entire file. This is the #1 fix for direct stream issues.
         '-movflags', '+faststart',
-
-        # Write a more complete header for better seeking support
         '-write_tmcd', '0',
 
         output_file
@@ -152,6 +174,7 @@ def encode_file(source_file: str, audio_track: int) -> bool:
 
     try:
         logging.info(f"Starting encoding: {source_file}")
+        logging.info(f"Output path generated: {output_file}")
         logging.info(f"FFmpeg command: {' '.join(ffmpeg_cmd)}")
 
         subprocess.run(ffmpeg_cmd, check=True)
@@ -190,12 +213,15 @@ def encode_file(source_file: str, audio_track: int) -> bool:
         logging.info(f"Removed source file: {source_file}")
         return True
 
-    except subprocess.CalledProcessError:
-        logging.error("FFmpeg encoding failed")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"FFmpeg encoding failed with exit code {e.returncode}")
         # Clean up partial output
         if os.path.exists(output_file):
-            os.remove(output_file)
-            logging.info("Cleaned up partial output file")
+            try:
+                os.remove(output_file)
+                logging.info("Cleaned up partial output file")
+            except Exception as cleanup_err:
+                logging.error(f"Failed to clean up output file {output_file}: {str(cleanup_err)}")
         return False
     except Exception as e:
         logging.error(f"Encoding error: {str(e)}")
