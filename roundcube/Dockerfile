@@ -1,4 +1,4 @@
-FROM roundcube/roundcubemail:1.7.4-apache AS builder
+FROM roundcube/roundcubemail:1.7.5-apache AS builder
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -42,7 +42,7 @@ RUN cd skins/elastic && \
     lessc --clean-css="--s1 --advanced" styles/styles.less > styles/styles.css && \
     lessc --clean-css="--s1 --advanced" styles/styles.less > styles/styles.min.css
 
-FROM roundcube/roundcubemail:1.7.4-apache
+FROM roundcube/roundcubemail:1.7.5-apache
 
 # Install YAML extension in the runtime stage
 RUN apt-get update && apt-get install -y libyaml-dev \
